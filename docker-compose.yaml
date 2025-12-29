@@ -1,0 +1,43 @@
+services:
+  # 1. The Dashboard (Streamlit)
+  dashboard:
+    build: .
+    container_name: ai-eval-dashboard
+    command: uv run streamlit run src/dashboard.py
+    ports:
+      - "8501:8501"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TARGET_URL=http://target_app:8503
+    depends_on:
+      - mongo
+      - target_app
+    volumes:
+      - ./data:/app/data # Mount data for RAG visibility
+      - ./tests:/app/tests # Mount tests
+      - ./src:/app/src # Mount src for dev reloading
+
+  # 2. The Target App (RAG Chatbot)
+  target_app:
+    build: .
+    container_name: ai-eval-target
+    command: uv run streamlit run src/target_app.py --server.port 8503
+    ports:
+      - "8503:8503"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./data:/app/data # Mount data so app can see KB
+
+  # 3. MongoDB (History)
+  mongo:
+    image: mongo:latest
+    container_name: ai-eval-mongo
+    ports:
+      - "27018:27017" # Exposed to host if needed, and internal network
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:

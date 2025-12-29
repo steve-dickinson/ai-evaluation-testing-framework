@@ -1,0 +1,42 @@
+site_name: AI Evaluation & Testing Framework
+site_description: Automated testing and evaluation framework for AI Chatbots.
+site_author: Maintainer
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: deep purple
+    - scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to dark mode
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Usage Guide: usage.md
+    - Docker & Deployment: docker.md
+  - Components:
+    - Target Chatbot (RAG): target_app.md
+    - Evaluators: evaluators.md
+    - Playwright UI Testing: playwright.md
+  - Architecture: architecture.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
