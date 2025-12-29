@@ -12,6 +12,10 @@ The main interface is the Streamlit Dashboard, which provides:
 uv run streamlit run src/dashboard.py
 ```
 
+#### New Features:
+- **📜 History**: Access the "History" tab to view and **Load** previous test runs from MongoDB. This allows you to review past results without re-running tests.
+- **🛡️ Recommendations**: If tests fail, use the "Analyze Failures" button. The AI will analyze the failure patterns and suggest a **Revised System Prompt** to fix the security or accuracy issues.
+
 ### 2. Command Line Interface (CLI)
 For CI/CD pipelines, use the CLI:
 

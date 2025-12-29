@@ -24,5 +24,5 @@ This framework provides a suite of tools to evaluate AI chatbots for safety, acc
 ## Key Features
 -   **Streamlit Dashboard**: Interactive control center.
 -   **MongoDB History**: Persistent storage of test runs.
--   **Recommendation Engine**: AI-driven analysis of failure modes.s.
+-   **Recommendation Engine**: AI-driven analysis of failure modes.
 - [**Architecture**](architecture.md): Technical overview.

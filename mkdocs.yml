@@ -27,6 +27,7 @@ nav:
   - Home: index.md
   - Getting Started:
     - Usage Guide: usage.md
+    - Dashboard Guide: dashboard.md
     - Docker & Deployment: docker.md
   - Components:
     - Target Chatbot (RAG): target_app.md
