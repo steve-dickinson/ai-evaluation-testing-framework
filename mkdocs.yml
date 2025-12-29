@@ -33,6 +33,7 @@ nav:
     - Target Chatbot (RAG): target_app.md
     - Evaluators: evaluators.md
     - Playwright UI Testing: playwright.md
+    - Red Teaming: red_teaming.md
   - Architecture: architecture.md
 
 markdown_extensions:
@@ -41,3 +42,4 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.highlight:
       anchor_linenums: true
+```

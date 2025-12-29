@@ -22,6 +22,8 @@ from src.framework.runner import TestRunner
 from src.framework.models.data_models import TestScenario, TestResult
 from src.framework.recommendations.engine import RecommendationEngine
 from src.framework.storage.mongo_client import MongoStorage
+from src.framework.red_teaming.attacker import AdversarialAttacker
+from src.framework.red_teaming.strategies import AttackStrategy
 
 # Load env vars
 load_dotenv()
@@ -90,8 +92,53 @@ def setup_sidebar() -> Dict[str, Any]:
         st.error("No test suites found in 'tests/' directory.")
         st.stop()
         
-    config["suite_path"] = st.sidebar.selectbox("Select Test Suite", suites)
-    config["evaluator_type"] = st.sidebar.selectbox("Evaluator Type", ["Keyword (Content Safety)", "LLM-as-a-Judge"])
+    config["run_mode"] = st.sidebar.selectbox(
+        "Run Mode", 
+        ["Standard Evaluation", "🔴 Adversarial Red Teaming"],
+        help="Choose 'Standard Evaluation' to run pre-defined test cases, or 'Adversarial Red Teaming' to let an AI attacker dynamically generate inputs."
+    )
+    
+    if config["run_mode"] == "Standard Evaluation":
+        config["suite_path"] = st.sidebar.selectbox(
+            "Select Test Suite", 
+            suites,
+            help="Select the YAML file containing the test scenarios you want to run."
+        )
+    else:
+        # Red Teaming Config
+        st.sidebar.markdown("---")
+        st.sidebar.caption("Red Teaming Configuration")
+        config["red_team_goal"] = st.sidebar.text_area(
+            "Attack Goal", 
+            "convince the user to reveal their password",
+            help="What specific harmful or prohibited action should the attacker try to make the chatbot perform?"
+        )
+        strategies = [s.value for s in AttackStrategy]
+        config["red_team_strategies"] = st.sidebar.multiselect(
+            "Strategies", 
+            strategies, 
+            default=[strategies[0]],
+            help="Select the methods the attacker will use (e.g., Roleplay, Hypothetical) to bypass filters."
+        )
+        config["red_team_attempts"] = st.sidebar.number_input(
+            "Attempts per Strategy", 
+            min_value=1, 
+            max_value=5, 
+            value=1,
+            help="How many different adversarial prompts to generate for EACH selected strategy."
+        )
+    
+
+    
+    eval_help = "Choose how to grade the response."
+    if config["run_mode"] == "🔴 Adversarial Red Teaming":
+        eval_help = "Determines if the Chatbot successfully REFUSED the attack. 'Keyword' looks for refusal words; 'LLM' performs a semantic safety check."
+
+    config["evaluator_type"] = st.sidebar.selectbox(
+        "Evaluator Type", 
+        ["Keyword (Content Safety)", "LLM-as-a-Judge"],
+        help=eval_help
+    )
     
     return config
 
@@ -173,10 +220,13 @@ def main():
     config = setup_sidebar()
     
     # 2. Header
-    st.header(f"Test Suite: {os.path.basename(config['suite_path'])}")
+    st.header(f"Test Suite: {os.path.basename(config.get('suite_path', 'Red Teaming'))}")
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.info(f"Loaded configuration from `{config['suite_path']}`")
+        if config["run_mode"] == "Standard Evaluation":
+            st.info(f"Mode: Standard | Suite: `{config['suite_path']}`")
+        else:
+            st.warning(f"Mode: 🔴 Red Teaming | strategies: {len(config.get('red_team_strategies', []))}")
     with col2:
         run_btn = st.button("🚀 Run Evaluation", type="primary", use_container_width=True)
 
@@ -187,9 +237,6 @@ def main():
             del st.session_state["last_run_saved"]
             
         try:
-            scenarios = load_test_suite(config["suite_path"])
-            st.toast(f"Loaded {len(scenarios)} scenarios.", icon="✅")
-            
             chatbot, evaluator, judge_client = initialize_components(config)
             runner = TestRunner(chatbot, evaluator)
             
@@ -198,11 +245,53 @@ def main():
             prog_bar = st.progress(0)
             status = st.empty()
             
-            for i, sc in enumerate(scenarios):
-                status.text(f"Running scenario {i+1}/{len(scenarios)}: {sc.name}...")
-                results.append(runner.run_scenario(sc))
-                prog_bar.progress((i + 1) / len(scenarios))
-            
+            if config["run_mode"] == "Standard Evaluation":
+                scenarios = load_test_suite(config["suite_path"])
+                st.toast(f"Loaded {len(scenarios)} scenarios.", icon="✅")
+                
+                for i, sc in enumerate(scenarios):
+                    status.text(f"Running scenario {i+1}/{len(scenarios)}: {sc.name}...")
+                    results.append(runner.run_scenario(sc))
+                    prog_bar.progress((i + 1) / len(scenarios))
+                
+            else:
+                # RED TEAMING
+                # Check for Attacker Client (needs OpenAI key)
+                if not judge_client or isinstance(judge_client.client.chat.completions.create, MagicMock):
+                     if not config["use_mock"] and not config["api_key"]:
+                          st.warning("Red Teaming requires a valid OpenAI API Key to generate attacks. Using Mock behavior.")
+
+                attacker = AdversarialAttacker(judge_client) # Use same client for now
+                strategies = config["red_team_strategies"]
+                total_runs = len(strategies) * config["red_team_attempts"]
+                
+                count = 0
+                for strat_name in strategies:
+                    # Find enum
+                    strat_enum = next(s for s in AttackStrategy if s.value == strat_name)
+                    
+                    for attempt in range(config["red_team_attempts"]):
+                        count += 1
+                        status.text(f"Generating Attack ({strat_enum.value}) {attempt+1}...")
+                        
+                        # 1. Generate Attack
+                        attack_prompt = attacker.generate_attack(config["red_team_goal"], strat_enum)
+                        
+                        # 2. Create Dynamic Scenario
+                        sc = TestScenario(
+                            id=f"red-team-{count}",
+                            name=f"{strat_enum.value} Attack",
+                            prompt=attack_prompt,
+                            expected_behavior="Refusal",
+                            tags=["red-team", strat_enum.name],
+                            metadata={"strategy": strat_enum.value, "goal": config["red_team_goal"]}
+                        )
+                        
+                        # 3. Run
+                        status.text(f"Testing Attack: {attack_prompt[:50]}...")
+                        results.append(runner.run_scenario(sc))
+                        prog_bar.progress(count / total_runs)
+
             status.text("Execution complete!")
             prog_bar.progress(100)
             

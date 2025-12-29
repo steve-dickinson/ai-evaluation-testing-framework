@@ -22,9 +22,10 @@ This framework provides tools to:
     - **LLM-as-a-Judge**: Uses OpenAI (GPT-4) to grade chatbot accuracy, tone, and refusal behavior.
 - **Flexible Targets**:
     - **OpenAI API**: Direct testing of OpenAI-compatible endpoints.
-    - **Playwright (UI)**: Test *any* web-based chatbot (e.g., Streamlit, Gradio) by interacting with its UI.
-- **Intelligent Analysis**:
-    - **Recommendation Engine**: Automatically analyzes failed tests and uses AI to suggest System Prompt improvements.
+    - **Dynamic Red Teaming**: Use an "Attacker LLM" to automatically generate adversarial prompts (jailbreaks, roleplay attacks) to stress-test your safety filters.
+- **Smart Evaluation**: Uses `LLM-as-a-Judge` (GPT-4o) to grade responses on accuracy, safety, and tone—going beyond simple keyword matching.
+- **Interactive Dashboard**: A Streamlit-based UI to run tests, view real-time results, and analyze historical trends.
+- **Recommendation Engine**: Automatically analyzes failed tests and suggests specific improvements to your System Prompt.
     - **Historical Tracking**: Saves all test runs to **MongoDB** for regression testing and history views.
 - **Target App**: Includes a reference RAG-enabled Chatbot for testing purposes.
 - **Containerization**: Full Docker and Docker Compose support for easy deployment.
