@@ -9,6 +9,7 @@ class TestScenario(BaseModel):
     description: Optional[str] = None
     prompt: str
     expected_behavior: Optional[str] = None
+    context: Optional[str] = None # Ground truth context for reference-based RAG eval
     tags: List[str] = []
     metadata: Dict[str, Any] = {}
 
@@ -18,6 +19,7 @@ class TestResult(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.now)
     prompt: str
     response: str
+    retrieved_context: Optional[str] = None # Actual context retrieved by the bot
     passed: bool
     score: float
     metrics: Dict[str, Any] = {}

@@ -5,7 +5,6 @@ from typing import List, Optional
 from dotenv import load_dotenv
 from unittest.mock import MagicMock
 
-# Load environment variables
 load_dotenv()
 
 from src.framework.chatbot.openai_client import OpenAIChatbot
@@ -38,7 +37,6 @@ def get_chatbot(target_url: Optional[str] = None, mock: bool = False) -> BaseCha
         ))
         return bot
     
-    print("Using REAL OpenAI client.")
     return OpenAIChatbot()
 
 def get_evaluator(evaluator_type: str, chatbot: BaseChatbot, mock: bool = False) -> BaseEvaluator:
@@ -53,10 +51,9 @@ def get_evaluator(evaluator_type: str, chatbot: BaseChatbot, mock: bool = False)
             ))
             return LLMEvaluator(judge_client)
         
-        # Reuse the chatbot client if it's an OpenAIChatbot, otherwise create fresh
         if isinstance(chatbot, OpenAIChatbot):
             return LLMEvaluator(chatbot)
-        return LLMEvaluator(OpenAIChatbot()) # Fresh client for judge
+        return LLMEvaluator(OpenAIChatbot())
         
     print("Using Keyword Content Safety Evaluator.")
     return ContentSafetyEvaluator()
@@ -76,15 +73,12 @@ def main():
         print(f"Error: Config file '{args.config}' not found.")
         return
 
-    # Initialize Components
     chatbot = get_chatbot(args.target_url, args.mock)
     evaluator = get_evaluator(args.evaluator, chatbot, args.mock)
     
-    # Run Tests
     runner = TestRunner(chatbot, evaluator)
     results = runner.run_suite(scenarios)
     
-    # Report
     print(f"\nExecution Complete. Ran {len(results)} tests.\n")
     pass_count = sum(1 for res in results if res.passed)
     

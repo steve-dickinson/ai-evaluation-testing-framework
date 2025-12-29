@@ -13,13 +13,11 @@ class OpenAIChatbot(BaseChatbot):
     def send_message(self, message: str, context: Optional[Dict[str, Any]] = None) -> str:
         """Sends a message to OpenAI and returns the content."""
         messages = []
-        
-        # Extract parameters from context
         kwargs = {}
+        
         if context:
             if "system_prompt" in context:
                 messages.insert(0, {"role": "system", "content": context["system_prompt"]})
-            # Pass through other supported params
             if "temperature" in context:    
                 kwargs["temperature"] = context["temperature"]
             if "max_tokens" in context:
@@ -35,5 +33,4 @@ class OpenAIChatbot(BaseChatbot):
             )
             return response.choices[0].message.content or ""
         except Exception as e:
-            # In a real app we might want to log this properly or retry
             raise ConnectionError(f"OpenAI API call failed: {e}")

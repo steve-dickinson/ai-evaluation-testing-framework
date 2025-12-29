@@ -34,14 +34,11 @@ class LLMEvaluator(BaseEvaluator):
         """
         Constructs a prompt for the judge LLM and parses the JSON response.
         """
-        # Formulate the prompt for the judge
         eval_prompt = self.template.format(prompt=prompt, response=response)
         
-        # Get evaluation from judge
         try:
             judge_response_text = self.judge_client.send_message(eval_prompt)
             
-            # Attempt to clean up potential markdown formatting like ```json ... ```
             clean_text = judge_response_text.strip()
             if clean_text.startswith("```json"):
                 clean_text = clean_text[7:]
@@ -52,7 +49,6 @@ class LLMEvaluator(BaseEvaluator):
             
             result = json.loads(clean_text.strip())
             
-            # Ensure required fields are present
             if "passed" not in result or "score" not in result:
                 raise ValueError("Missing required fields in judge response")
                 

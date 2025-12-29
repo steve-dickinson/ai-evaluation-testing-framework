@@ -24,6 +24,7 @@ from src.framework.recommendations.engine import RecommendationEngine
 from src.framework.storage.mongo_client import MongoStorage
 from src.framework.red_teaming.attacker import AdversarialAttacker
 from src.framework.red_teaming.strategies import AttackStrategy
+from src.framework.evaluators.rag_evaluator import RAGEvaluator
 
 # Load env vars
 load_dotenv()
@@ -136,7 +137,7 @@ def setup_sidebar() -> Dict[str, Any]:
 
     config["evaluator_type"] = st.sidebar.selectbox(
         "Evaluator Type", 
-        ["Keyword (Content Safety)", "LLM-as-a-Judge"],
+        ["Keyword (Content Safety)", "LLM-as-a-Judge", "RAG Evaluation"],
         help=eval_help
     )
     
@@ -147,7 +148,6 @@ def initialize_components(config: Dict[str, Any]):
     chatbot = None
     judge_client = None
     
-    # 1. Setup Chatbot
     if config["mode"] == "Playwright (UI Testing)":
         if not config["target_url"]:
             st.error("Please provide a Target URL.")
@@ -175,14 +175,19 @@ def initialize_components(config: Dict[str, Any]):
             chatbot = OpenAIChatbot(api_key=config["api_key"])
             judge_client = chatbot
 
-    # 2. Setup Evaluator
     if config["evaluator_type"] == "LLM-as-a-Judge":
         if config["use_mock"]:
             # Mock Judge
             judge_client.client.chat.completions.create = MagicMock(return_value=MagicMock(
-                choices=[MagicMock(message=MagicMock(content='{"passed": true, "score": 0.95, "reason": "Mock judge approves."}'))]
+                choices=[MagicMock(message=MagicMock(content='0.9'))] # Return float for score parsing
             ))
         evaluator = LLMEvaluator(judge_client)
+    elif config["evaluator_type"] == "RAG Evaluation":
+        if config["use_mock"]:
+             judge_client.client.chat.completions.create = MagicMock(return_value=MagicMock(
+                choices=[MagicMock(message=MagicMock(content='0.8'))]
+            ))
+        evaluator = RAGEvaluator(judge_client)
     else:
         evaluator = ContentSafetyEvaluator()
         
@@ -216,10 +221,8 @@ def load_run_callback(run_id: str):
 def main():
     st.title("🛡️ AI Chatbot Evaluation Framework")
     
-    # 1. Configuration
     config = setup_sidebar()
     
-    # 2. Header
     st.header(f"Test Suite: {os.path.basename(config.get('suite_path', 'Red Teaming'))}")
     col1, col2 = st.columns([3, 1])
     with col1:
@@ -230,7 +233,6 @@ def main():
     with col2:
         run_btn = st.button("🚀 Run Evaluation", type="primary", use_container_width=True)
 
-    # 3. Execution Logic
     if run_btn:
         # Reset save flag for new run
         if "last_run_saved" in st.session_state:
@@ -304,7 +306,6 @@ def main():
             st.error(f"Execution Error: {e}")
             return
 
-    # 4. Main Display Area (Always Visible)
     st.divider()
     
     # Init view_mode if not present
@@ -406,8 +407,7 @@ def main():
              else:
                  st.info("No history found.")
 
-    # 5. Auto-Save Logic
-    # We use a flag to prevent duplicate saves on reruns
+    # Auto-Save Logic
     if "results" in st.session_state and "last_run_saved" not in st.session_state:
         # Check if we are in a "fresh run" state (e.g., config_snapshot exists implies a run just happened)
         # To avoid saving "Loaded" results, checking config_snapshot is a decent proxy, 

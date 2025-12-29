@@ -15,14 +15,16 @@ class TestRunner:
         start_time = time.time()
         
         try:
-            # 1. Send prompt to chatbot
             response_text = self.chatbot.send_message(scenario.prompt, context=scenario.metadata)
             
-            # 2. Evaluate response
+            eval_context = scenario.metadata.copy()
+            if scenario.context:
+                eval_context["rag_context"] = scenario.context
+            
             eval_result = self.evaluator.evaluate(
                 prompt=scenario.prompt,
                 response=response_text,
-                context=scenario.metadata
+                context=eval_context
             )
             
             execution_time = (time.time() - start_time) * 1000

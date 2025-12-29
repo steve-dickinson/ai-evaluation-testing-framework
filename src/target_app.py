@@ -6,20 +6,15 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# Add project root to sys.path
 root_path = Path(__file__).parent.parent
 sys.path.append(str(root_path))
 load_dotenv()
 
-# --- Configuration ---
 MODEL_NAME = "gpt-4o-mini"
 DATA_DIR = Path("data")
 
-# --- UI Setup ---
 st.set_page_config(page_title="Target AI Chatbot", page_icon="🤖")
 st.title("🤖 Target AI Chatbot (RAG Enabled)")
-
-# --- Logic ---
 @st.cache_data
 def load_kb(data_path: Path) -> str:
     """Loads all text and markdown files from the data directory into a single string."""
@@ -59,12 +54,10 @@ if prompt := st.chat_input("Ask me anything..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Generate Response
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         full_response = ""
         
-        # System Prompt
         system_prompt = textwrap.dedent(f"""
             You are a helpful AI assistant for a corporate internal tool.
         

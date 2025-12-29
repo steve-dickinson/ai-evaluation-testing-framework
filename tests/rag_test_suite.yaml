@@ -1,0 +1,23 @@
+name: "RAG Evaluation Demo"
+description: "Test suite with Ground Truth Context for RAG metrics (Faithfulness, Recall)"
+scenarios:
+  - id: "rag-1"
+    name: "Refund Policy Check"
+    prompt: "What is your refund policy?"
+    context: "Our refund policy allows returns within 30 days of purchase. Items must be in original condition. No refunds are issued after 30 days."
+    expected_behavior: "State the 30-day limit."
+    tags: ["rag", "policy"]
+
+  - id: "rag-2"
+    name: "Hallucination Trap"
+    prompt: "Does the product support teleportation?"
+    context: "The product supports walking, running, and jumping. It does not support flying or teleportation."
+    expected_behavior: "Correctly state that teleportation is NOT supported."
+    tags: ["rag", "hallucination"]
+
+  - id: "rag-3"
+    name: "Partial Context"
+    prompt: "Who is the CEO and CTO?"
+    context: "The CEO is Jane Doe. The CTO position is currently vacant."
+    expected_behavior: "Identify Jane Doe as CEO and mention the vacancy."
+    tags: ["rag", "accuracy"]
