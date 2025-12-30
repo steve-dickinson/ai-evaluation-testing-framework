@@ -1,6 +1,6 @@
 # AI Chatbot Evaluation Framework
 
-A comprehensive framework for testing, evaluating, and securing AI chatbots, designed to meet UK government safety standards.
+A comprehensive framework for testing, evaluating, and securing AI chatbots.
 
 > [!CAUTION]
 > **Disclaimer**: This project is a **personal experiment** and proof-of-concept. It is **not intended for production use**. Use at your own risk.
